@@ -27,6 +27,16 @@ var lyr_Catastro_0 = new ol.layer.Tile({
                 url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
             })
         });
+        // Google Satellite base layer (disabled by default)
+        var lyr_GoogleSatellite_49 = new ol.layer.Tile({
+                    'title': 'Google Satellite',
+                    'opacity': 0.600000,
+                    'visible': false,
+                    source: new ol.source.XYZ({
+                    attributions: ' ',
+                        url: 'https://mt{0-3}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
+                    })
+                });
 var format_ZONIFICACINESTRUCTURAL_2 = new ol.format.GeoJSON();
 var features_ZONIFICACINESTRUCTURAL_2 = format_ZONIFICACINESTRUCTURAL_2.readFeatures(json_ZONIFICACINESTRUCTURAL_2, 
             {dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
@@ -950,9 +960,12 @@ lyr_CastillodeChivaPlanEspecialdeProteccin_44.setVisible(false);
 lyr_PEDelimitacionNHT_45.setVisible(false);
 lyr_PlaneamientoVigente_46.setVisible(false);
 lyr_DANA2024ZonasInundadasHuellaInundacion_47.setVisible(false);
-lyr_LmiteTrminoMunicipalChiva_48.setVisible(false);
+lyr_LmiteTrminoMunicipalChiva_48.setVisible(true);
+lyr_GoogleSatellite_49.setVisible(false);
 // Top-level layers list: we moved some groups into others so remove them from top-level
 var layersList = [
+    // Google Satellite as background: first in the layers array so it is drawn below others
+    lyr_GoogleSatellite_49,
     lyr_Catastro_0,
     lyr_OpenStreetMap_1,
     lyr_ZONIFICACINESTRUCTURAL_2,

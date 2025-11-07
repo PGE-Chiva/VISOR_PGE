@@ -14,6 +14,95 @@ map.getView().fit([-107463.570446, 4775488.074797, -56988.977717, 4811596.492025
 //full zooms only
 map.getView().setProperties({constrainResolution: true});
 
+// Add hover highlight functionality
+var hoverSource = new ol.source.Vector({
+    wrapX: false
+});
+
+var hoverLayer = new ol.layer.Vector({
+    source: hoverSource,
+    style: new ol.style.Style({
+        stroke: new ol.style.Stroke({
+            color: '#8B4513',
+            width: 2
+        }),
+        fill: new ol.style.Fill({
+            color: 'rgba(139,69,19,0.2)'
+        })
+    })
+});
+
+map.addLayer(hoverLayer);
+
+var lastFeature = null;
+map.on('pointermove', function(e) {
+    if (e.dragging) {
+        return;
+    }
+    
+    var hit = false;
+    map.forEachFeatureAtPixel(e.pixel, function(feature, layer) {
+        if (feature !== lastFeature) {
+            if (lastFeature) {
+                hoverSource.clear();
+            }
+            if (feature) {
+                hoverSource.addFeature(feature);
+            }
+            lastFeature = feature;
+        }
+        hit = true;
+        return true;
+    });
+    
+    if (!hit && lastFeature) {
+        hoverSource.clear();
+        lastFeature = null;
+    }
+    
+    map.getViewport().style.cursor = hit ? 'pointer' : '';
+});
+
+// Add multi-layer selection functionality
+var selectedSource = new ol.source.Vector({
+    wrapX: false
+});
+
+var selectedLayer = new ol.layer.Vector({
+    source: selectedSource,
+    style: new ol.style.Style({
+        stroke: new ol.style.Stroke({
+            color: '#0000ff',
+            width: 3
+        }),
+        fill: new ol.style.Fill({
+            color: 'rgba(0,0,255,0.3)'
+        })
+    })
+});
+
+map.addLayer(selectedLayer);
+
+map.on('click', function(e) {
+    map.forEachFeatureAtPixel(e.pixel, function(feature, layer) {
+        if (feature) {
+            // Check if feature is already selected
+            var isSelected = false;
+            selectedSource.getFeatures().forEach(function(f) {
+                if (f === feature) {
+                    isSelected = true;
+                    selectedSource.removeFeature(f);
+                }
+            });
+            
+            if (!isSelected) {
+                selectedSource.addFeature(feature);
+            }
+        }
+        return true;
+    });
+});
+
 ////small screen definition
     var hasTouchScreen = map.getViewport().classList.contains('ol-touch');
     var isSmallScreen = window.innerWidth < 650;
@@ -45,6 +134,47 @@ map.getView().setProperties({constrainResolution: true});
         element: (() => {
             var topRightContainer = document.createElement('div');
             topRightContainer.id = 'top-right-container';
+            
+            // Add search box
+            var searchBox = document.createElement('input');
+            searchBox.type = 'text';
+            searchBox.placeholder = 'Buscar capas...';
+            searchBox.style.margin = '10px';
+            searchBox.style.padding = '5px';
+            searchBox.style.width = '200px';
+            
+            searchBox.addEventListener('input', function(e) {
+                var searchTerm = e.target.value.toLowerCase();
+                var layerGroups = document.querySelectorAll('.layer-switcher li.group');
+                
+                layerGroups.forEach(function(group) {
+                    var layers = group.querySelectorAll('li.layer');
+                    var hasMatch = false;
+                    
+                    layers.forEach(function(layer) {
+                        var layerName = layer.textContent.toLowerCase();
+                        if (layerName.includes(searchTerm)) {
+                            layer.style.display = '';
+                            hasMatch = true;
+                        } else {
+                            layer.style.display = 'none';
+                        }
+                    });
+                    
+                    // Show/hide group based on matches
+                    if (hasMatch || searchTerm === '') {
+                        group.style.display = '';
+                        // Expand group if there are matches
+                        if (hasMatch && searchTerm !== '') {
+                            group.classList.add('layer-switcher-fold');
+                        }
+                    } else {
+                        group.style.display = 'none';
+                    }
+                });
+            });
+            
+            topRightContainer.appendChild(searchBox);
             return topRightContainer;
         })(),
     });
@@ -853,8 +983,74 @@ let measuring = false;
 //layerswitcher
 
 var layerSwitcher = new ol.control.LayerSwitcher({
-    tipLabel: "Layers",
-    target: 'top-right-container'
+    tipLabel: "Layers"
+});
+
+// Add search functionality after layer switcher is added
+map.addControl(layerSwitcher);
+
+// Function to add search box
+function addLayerSearch() {
+    setTimeout(function() {
+        var panel = document.querySelector('.layer-switcher');
+        if (panel && !document.getElementById('layer-search')) {
+            var searchDiv = document.createElement('div');
+            searchDiv.style.padding = '5px';
+            searchDiv.style.backgroundColor = 'white';
+            searchDiv.style.borderBottom = '1px solid #ccc';
+            searchDiv.style.marginBottom = '5px';
+            
+            var searchInput = document.createElement('input');
+            searchInput.id = 'layer-search';
+            searchInput.type = 'text';
+            searchInput.placeholder = 'Buscar capas...';
+            searchInput.style.width = '95%';
+            searchInput.style.padding = '5px';
+            searchInput.style.boxSizing = 'border-box';
+            searchInput.style.border = '1px solid #ccc';
+            searchInput.style.borderRadius = '4px';
+            searchInput.style.margin = '5px';
+            
+            searchDiv.appendChild(searchInput);
+            var layerList = panel.querySelector('.panel');
+            if (layerList) {
+                layerList.insertBefore(searchDiv, layerList.firstChild);
+            }
+            
+            searchInput.addEventListener('input', function(e) {
+                var searchTerm = e.target.value.toLowerCase();
+                var layerGroups = panel.querySelectorAll('.layer-switcher li.group');
+                
+                layerGroups.forEach(function(group) {
+                    var layers = group.querySelectorAll('li.layer');
+                    var hasMatch = false;
+                    
+                    layers.forEach(function(layer) {
+                        var layerName = layer.textContent.toLowerCase();
+                        if (layerName.includes(searchTerm)) {
+                            layer.style.display = '';
+                            hasMatch = true;
+                        } else {
+                            layer.style.display = 'none';
+                        }
+                    });
+                    
+                    if (hasMatch || searchTerm === '') {
+                        group.style.display = '';
+                        if (hasMatch && searchTerm !== '') {
+                            group.classList.add('layer-switcher-fold');
+                            let groupTitle = group.querySelector('.group-title');
+                            if (groupTitle && !groupTitle.classList.contains('layer-switcher-fold')) {
+                                groupTitle.click();
+                            }
+                        }
+                    } else {
+                        group.style.display = 'none';
+                    }
+                });
+            });
+        }
+    }
 });
 map.addControl(layerSwitcher);
     
