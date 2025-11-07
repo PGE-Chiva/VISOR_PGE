@@ -986,18 +986,148 @@ var layerSwitcher = new ol.control.LayerSwitcher({
     tipLabel: "Layers"
 });
 
-// Add search functionality after layer switcher is added
 map.addControl(layerSwitcher);
 
-// Function to add search box
-function addLayerSearch() {
-    setTimeout(function() {
-        var panel = document.querySelector('.layer-switcher');
+// Function to add search to layer switcher
+function addSearchToLayerSwitcher() {
+    var panel = document.querySelector('.layer-switcher .panel');
+    if (panel && !document.getElementById('layer-search')) {
+        // Create and style search container
+        var searchContainer = document.createElement('div');
+        searchContainer.style.padding = '5px';
+        searchContainer.style.backgroundColor = 'white';
+        searchContainer.style.borderBottom = '1px solid #ccc';
+        searchContainer.style.marginBottom = '5px';
+        
+        // Create and style search input
+        var searchInput = document.createElement('input');
+        searchInput.id = 'layer-search';
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Buscar capas...';
+        searchInput.style.width = '100%';
+        searchInput.style.padding = '5px';
+        searchInput.style.boxSizing = 'border-box';
+        searchInput.style.border = '1px solid #ccc';
+        searchInput.style.borderRadius = '4px';
+        
+        // Add search input to container
+        searchContainer.appendChild(searchInput);
+        
+        // Insert at the beginning of the panel
+        if (panel.firstChild) {
+            panel.insertBefore(searchContainer, panel.firstChild);
+        } else {
+            panel.appendChild(searchContainer);
+        }
+        
+        // Add search functionality
+        searchInput.addEventListener('input', function(e) {
+            var searchTerm = e.target.value.toLowerCase();
+            var groups = panel.querySelectorAll('li.group');
+            
+            groups.forEach(function(group) {
+                var hasVisibleLayer = false;
+                var groupLayers = group.querySelectorAll('li.layer');
+                
+                groupLayers.forEach(function(layer) {
+                    if (layer.textContent.toLowerCase().includes(searchTerm)) {
+                        layer.style.display = '';
+                        hasVisibleLayer = true;
+                    } else {
+                        layer.style.display = 'none';
+                    }
+                });
+                
+                if (hasVisibleLayer || searchTerm === '') {
+                    group.style.display = '';
+                    if (hasVisibleLayer && searchTerm !== '') {
+                        var groupTitle = group.querySelector('.group-title');
+                        if (groupTitle && !group.classList.contains('layer-switcher-fold')) {
+                            groupTitle.click();
+                        }
+                    }
+                } else {
+                    group.style.display = 'none';
+                }
+            });
+        });
+    }
+}
+
+// Add search when layer switcher is shown
+layerSwitcher.on('show', addSearchToLayerSwitcher);
+
+// Add search functionality to layer switcher
+document.addEventListener('DOMContentLoaded', function() {
+    var checkExist = setInterval(function() {
+        var panel = document.querySelector('.layer-switcher .panel');
         if (panel && !document.getElementById('layer-search')) {
-            var searchDiv = document.createElement('div');
-            searchDiv.style.padding = '5px';
-            searchDiv.style.backgroundColor = 'white';
-            searchDiv.style.borderBottom = '1px solid #ccc';
+            clearInterval(checkExist);
+            
+            // Create and style search container
+            var searchContainer = document.createElement('div');
+            searchContainer.style.padding = '5px';
+            searchContainer.style.backgroundColor = 'white';
+            searchContainer.style.borderBottom = '1px solid #ccc';
+            searchContainer.style.marginBottom = '5px';
+            
+            // Create and style search input
+            var searchInput = document.createElement('input');
+            searchInput.id = 'layer-search';
+            searchInput.type = 'text';
+            searchInput.placeholder = 'Buscar capas...';
+            searchInput.style.width = '100%';
+            searchInput.style.padding = '5px';
+            searchInput.style.boxSizing = 'border-box';
+            searchInput.style.border = '1px solid #ccc';
+            searchInput.style.borderRadius = '4px';
+            
+            // Add search input to container
+            searchContainer.appendChild(searchInput);
+            
+            // Insert at the beginning of the panel
+            if (panel.firstChild) {
+                panel.insertBefore(searchContainer, panel.firstChild);
+            } else {
+                panel.appendChild(searchContainer);
+            }
+            
+            // Add search functionality
+            searchInput.addEventListener('input', function(e) {
+                var searchTerm = e.target.value.toLowerCase();
+                var layers = panel.querySelectorAll('li.layer');
+                var groups = panel.querySelectorAll('li.group');
+                
+                groups.forEach(function(group) {
+                    var hasVisibleLayer = false;
+                    var groupLayers = group.querySelectorAll('li.layer');
+                    
+                    groupLayers.forEach(function(layer) {
+                        if (layer.textContent.toLowerCase().includes(searchTerm)) {
+                            layer.style.display = '';
+                            hasVisibleLayer = true;
+                        } else {
+                            layer.style.display = 'none';
+                        }
+                    });
+                    
+                    if (hasVisibleLayer || searchTerm === '') {
+                        group.style.display = '';
+                        if (hasVisibleLayer && searchTerm !== '') {
+                            // Expand group
+                            var groupTitle = group.querySelector('.group-title');
+                            if (groupTitle && !group.classList.contains('layer-switcher-fold')) {
+                                groupTitle.click();
+                            }
+                        }
+                    } else {
+                        group.style.display = 'none';
+                    }
+                });
+            });
+        }
+    }, 100); // check every 100ms
+});
             searchDiv.style.marginBottom = '5px';
             
             var searchInput = document.createElement('input');
